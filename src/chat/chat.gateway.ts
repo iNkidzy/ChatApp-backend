@@ -8,42 +8,38 @@ import {
   WebSocketServer,
 } from '@nestjs/websockets';
 import { Socket } from 'Socket.io';
+import { ChatService } from './shared/chat.service';
 
 @WebSocketGateway()
 export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
-  allMessages: string[] = [];
-  // Id, name
-  userMap: Map<string, string> = new Map<string, string>();
+  constructor(private chatService: ChatService) {}
   @WebSocketServer() server;
   @SubscribeMessage('message')
-  handleChatEvent(@MessageBody() message: string): string {
-    console.log(message);
-    this.allMessages.push(message);
-    this.server.emit('newMessage', message);
-    return message + ' Hello';
+  handleChatEvent(
+    @MessageBody() message: string,
+    @ConnectedSocket() client: Socket,
+  ): void {
+    const chatMessage = this.chatService.newMessage(message, client.id);
+    this.server.emit('newMessage', chatMessage);
+    console.log(chatMessage);
   }
 
   @SubscribeMessage('name')
   handleNameEvent(
     @MessageBody() name: string,
     @ConnectedSocket() client: Socket,
-  ): string {
-    this.userMap.set(client.id, name);
-    console.log('All names:', this.userMap);
-    this.server.emit('clients', Array.from(this.userMap.values()));
-    console.log('map: ', Array.from(this.userMap));
-    return name + ' Hello';
+  ): void {
+    this.chatService.newClient(client.id, name);
+    this.server.emit('clients', this.chatService.getClients());
   }
   handleConnection(client: Socket, ...args: any[]): any {
     console.log('Client is Connected', client.id);
-    /* this.userMap.delete(client.id); */
-    client.emit('allMessages', this.allMessages);
-    this.server.emit('clients', Array.from(this.userMap.values()));
+    client.emit('allMessages', this.chatService.getMessages());
+    this.server.emit('clients', this.chatService.getClients());
   }
-
   handleDisconnect(client: Socket): any {
-    this.userMap.delete(client.id);
-    this.server.emit('clients', Array.from(this.userMap.values()));
-    console.log('Client is Disconnected', this.userMap);
+    this.chatService.delete(client.id);
+    this.server.emit('clients', this.chatService.getClients());
+    console.log('Client is Disconnected', this.chatService.getClients());
   }
 }
