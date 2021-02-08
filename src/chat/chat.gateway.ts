@@ -11,14 +11,16 @@ import { Socket } from 'Socket.io';
 
 @WebSocketGateway()
 export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
-  @WebSocketServer() server;
+  allMessages: string[] = [];
   // Id, name
   userMap: Map<string, string> = new Map<string, string>();
+  @WebSocketServer() server;
   @SubscribeMessage('message')
-  handleChatEvent(@MessageBody() data: string): string {
-    console.log(data);
-    this.server.emit('messages', data);
-    return data + ' Hello';
+  handleChatEvent(@MessageBody() message: string): string {
+    console.log(message);
+    this.allMessages.push(message);
+    this.server.emit('newMessage', message);
+    return message + ' Hello';
   }
 
   @SubscribeMessage('name')
@@ -27,18 +29,21 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     @ConnectedSocket() client: Socket,
   ): string {
     this.userMap.set(client.id, name);
+    console.log('All names:', this.userMap);
     this.server.emit('clients', Array.from(this.userMap.values()));
     console.log('map: ', Array.from(this.userMap));
     return name + ' Hello';
   }
-  handleConnection(client: any, ...args: any[]): any {
-    console.log('Client Connect', client.id);
-    this.userMap.delete(client.id);
+  handleConnection(client: Socket, ...args: any[]): any {
+    console.log('Client is Connected', client.id);
+    /* this.userMap.delete(client.id); */
+    client.emit('allMessages', this.allMessages);
+    this.server.emit('clients', Array.from(this.userMap.values()));
   }
 
-  handleDisconnect(client: any): any {
+  handleDisconnect(client: Socket): any {
     this.userMap.delete(client.id);
-    this.server.emit('clients', this.userMap.values());
-    console.log('Client Disconnect', client.id);
+    this.server.emit('clients', Array.from(this.userMap.values()));
+    console.log('Client is Disconnected', this.userMap);
   }
 }
