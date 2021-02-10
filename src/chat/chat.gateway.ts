@@ -9,6 +9,7 @@ import {
 } from '@nestjs/websockets';
 import { Socket } from 'Socket.io';
 import { ChatService } from './shared/chat.service';
+import { WelcomeDto } from './shared/welcome.dto';
 
 @WebSocketGateway()
 export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
@@ -29,13 +30,25 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     @MessageBody() name: string,
     @ConnectedSocket() client: Socket,
   ): void {
-    this.chatService.newClient(client.id, name);
-    this.server.emit('clients', this.chatService.getClients());
+    try {
+      const chatClient = this.chatService.addClient(client.id, name);
+      const welcome: WelcomeDto = {
+        clients: this.chatService.getClients(),
+        messages: this.chatService.getMessages(),
+        client: chatClient,
+      };
+      client.emit('welcome', welcome);
+      this.server.emit('clients', this.chatService.getClients());
+    } catch (error) {
+      client.error(error.message);
+    }
   }
+  // this.chatService.newClient(client.id, name);
+  // this.server.emit('clients', this.chatService.getClients());
   handleConnection(client: Socket, ...args: any[]): any {
     console.log('Client is Connected', client.id);
     client.emit('allMessages', this.chatService.getMessages());
-    this.server.emit('clients', this.chatService.getClients());
+
   }
   handleDisconnect(client: Socket): any {
     this.chatService.delete(client.id);

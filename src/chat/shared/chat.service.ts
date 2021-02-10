@@ -15,11 +15,17 @@ export class ChatService {
     this.allMessages.push(chatMessage);
     return chatMessage;
   }
-
-  newClient(id: string, name: string) {
-    const chatClient: ChatClient = { id: id, name: name };
+  addClient(id: string, name: string): ChatClient {
+    let chatClient = this.clients.find((c) => c.name === name && c.id === id);
+    if (chatClient) {
+      return chatClient;
+    }
+    if (this.clients.find((c) => c.name === name)) {
+      throw new Error('Username already used!');
+    }
+    chatClient = { id: id, name: name };
     this.clients.push(chatClient);
-    console.log('All names:', this.clients);
+    return chatClient;
   }
 
   getClients(): ChatClient[] {
