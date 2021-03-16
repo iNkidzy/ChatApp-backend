@@ -5,5 +5,4 @@ export interface WelcomeDto {
   clients: ChatClient[];
   client: ChatClient;
   messages: ChatMessage[];
-  typing: ChatClient[];
 }
