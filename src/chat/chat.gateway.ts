@@ -24,7 +24,16 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     this.server.emit('newMessage', chatMessage);
     console.log(chatMessage);
   }
-
+  @SubscribeMessage('typing')
+  handleTypingEvent(
+    @MessageBody() typing: boolean,
+    @ConnectedSocket() client: Socket,
+  ): void {
+    const chatClient = this.chatService.updateTyping(typing, client.id);
+    if (chatClient) {
+      this.server.emit('clientTyping', chatClient);
+    }
+  }
   @SubscribeMessage('name')
   handleNameEvent(
     @MessageBody() name: string,
