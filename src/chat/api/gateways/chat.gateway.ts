@@ -64,6 +64,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   handleConnection(client: Socket, ...args: any[]): any {
     console.log('Client is Connected', client.id);
     client.emit('allMessages', this.chatService.getMessages());
+    this.server.emit('clients', this.chatService.getClients());
   }
   handleDisconnect(client: Socket): any {
     this.chatService.delete(client.id);
