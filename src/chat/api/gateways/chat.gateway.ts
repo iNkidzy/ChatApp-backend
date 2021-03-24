@@ -48,27 +48,26 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   ): Promise<void> {
     try {
       const chatClient = await this.chatService.addClient(client.id, name);
+      const chatClients = await this.chatService.getClients();
       const welcome: WelcomeDto = {
-        clients: this.chatService.getClients(),
+        clients: chatClients,
         messages: this.chatService.getMessages(),
         client: chatClient,
       };
       client.emit('welcome', welcome);
-      this.server.emit('clients', this.chatService.getClients());
+      this.server.emit('clients', chatClients);
     } catch (error) {
       client.error(error.message);
     }
   }
-  // this.chatService.newClient(client.id, name);
-  // this.server.emit('clients', this.chatService.getClients());
-  handleConnection(client: Socket, ...args: any[]): any {
-    console.log('Client is Connected', client.id);
+  async handleConnection(client: Socket, ...args: any[]): Promise<any> {
+    // console.log('Client is Connected', client.id);
     client.emit('allMessages', this.chatService.getMessages());
-    this.server.emit('clients', this.chatService.getClients());
+    this.server.emit('clients', await this.chatService.getClients());
   }
-  handleDisconnect(client: Socket): any {
-    this.chatService.delete(client.id);
-    this.server.emit('clients', this.chatService.getClients());
-    console.log('Client is Disconnected', this.chatService.getClients());
+  async handleDisconnect(client: Socket): Promise<any> {
+    await this.chatService.delete(client.id);
+    this.server.emit('clients', await this.chatService.getClients());
+    // console.log('Client is Disconnected', this.chatService.getClients());
   }
 }

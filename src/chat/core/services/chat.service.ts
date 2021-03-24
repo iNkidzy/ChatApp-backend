@@ -40,16 +40,18 @@ export class ChatService implements IChatService {
     }
   }
 
-  getClients(): ChatClient[] {
-    return this.clients;
+  async getClients(): Promise<ChatClient[]> {
+    const clients = await this.clientRepository.find();
+    const chatClients: ChatClient[] = JSON.parse(JSON.stringify(clients));
+    return chatClients;
   }
 
   getMessages(): ChatMessage[] {
     return this.allMessages;
   }
 
-  delete(id: string) {
-    this.clients = this.clients.filter((c) => c.id !== id);
+  async delete(id: string): Promise<void> {
+    await this.clientRepository.delete({ id: id });
   }
 
   updateTyping(typing: boolean, id: string): ChatClient {
