@@ -3,9 +3,11 @@ import { ChatClient } from '../models/chat-client.module';
 
 export const IChatServiceProvider = 'IChatServiceProvider';
 export interface IChatService {
-  newMessage(message: string, senderId: string): ChatMessage;
+  newMessage(message: string, senderId: string): Promise<ChatMessage>;
 
   addClient(id: string, name: string): Promise<ChatClient>;
+
+  getClient(id: string): Promise<ChatClient>;
 
   getClients(): Promise<ChatClient[]>;
 

@@ -16,11 +16,9 @@ export class ChatService implements IChatService {
     private clientRepository: Repository<Client>,
   ) {}
 
-  newMessage(message: string, senderId: string): ChatMessage {
-    const chatMessage: ChatMessage = {
-      message: message,
-      sender: this.clients.find((c) => c.id === senderId),
-    };
+  async newMessage(message: string, senderId: string): Promise<ChatMessage> {
+    const clientDb = await this.clientRepository.findOne({ id: senderId });
+    const chatMessage: ChatMessage = { message: message, sender: clientDb };
     this.allMessages.push(chatMessage);
     return chatMessage;
   }
@@ -31,7 +29,9 @@ export class ChatService implements IChatService {
       client.id = id;
       client.name = name;
       client = await this.clientRepository.save(client);
-      return { id: '' + client.id, name: client.name };
+      const chatClient = JSON.parse(JSON.stringify(client));
+      this.clients.push(chatClient);
+      return chatClient;
     }
     if (clientDb.id === id) {
       return { id: clientDb.id, name: clientDb.name };
@@ -44,6 +44,11 @@ export class ChatService implements IChatService {
     const clients = await this.clientRepository.find();
     const chatClients: ChatClient[] = JSON.parse(JSON.stringify(clients));
     return chatClients;
+  }
+
+  async getClient(id: string): Promise<ChatClient> {
+    const clientDb: Client = await this.clientRepository.findOne({ id: id });
+    return clientDb;
   }
 
   getMessages(): ChatMessage[] {
